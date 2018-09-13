@@ -385,18 +385,18 @@ int main(int argc, char** argv) {
   game.MakeMove(player, location);
   
   player = 1;
-  location.x = 1;
-  location.y = 0;
-  game.MakeMove(player, location);
-  
-  player = 2;
   location.x = 0;
   location.y = 1;
   game.MakeMove(player, location);
   
-  player = 1;
-  location.x = 1;
+  player = 2;
+  location.x = 2;
   location.y = 2;
+  game.MakeMove(player, location);
+  
+  player = 1;
+  location.x = 2;
+  location.y = 1;
   result = game.MakeMove(player, location);
   
   if(result.status != status_winner){
