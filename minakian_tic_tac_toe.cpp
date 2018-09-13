@@ -22,6 +22,11 @@ struct Result{
   int status;
 };
 
+struct WinPosibility{
+  Player player;
+  int spaces_taken;
+};
+
 // Square NxN board, win with N consecutive.
 class TicTacToe {
  public:
@@ -47,7 +52,10 @@ private:
   int move;
   int board_size;
   int players;
+  int min_moves_to_win;
+  int diagonal_win_position;
   int **board;
+  WinPosibility *posibilities;
   int max_moves;
   void allocBoard();
   int TestWin(Location location);
@@ -60,6 +68,7 @@ TicTacToe::TicTacToe(){
   players = 2;
   move = 1;
   max_moves = 9;
+  diagonal_win_position = 2 * board_size;
   // Create the board
   allocBoard();
   // Initialize board to all zeros
@@ -68,6 +77,7 @@ TicTacToe::TicTacToe(){
       board[i][j] = 0;
     }
   }
+  min_moves_to_win = 5;
 }
 
 // Constructor for boards of different sizes and players
@@ -76,6 +86,7 @@ TicTacToe::TicTacToe(int size, int num_players){
   board_size = size;
   players = num_players;
   max_moves = board_size * board_size;
+  diagonal_win_position = 2 * board_size;
   allocBoard();
   // Initialize board to all zeros
   for(int i = 0; i < board_size; i++){
@@ -83,6 +94,7 @@ TicTacToe::TicTacToe(int size, int num_players){
       board[i][j] = 0;
     }
   }
+  min_moves_to_win = (board_size-1) * players + 1;
 }
 
 // Destructor
@@ -91,6 +103,7 @@ TicTacToe::~TicTacToe(){
     delete[] board[i];
   }
   delete[] board;
+  delete[] posibilities;
 }
 
 Result TicTacToe::MakeMove(Player player, Location location){
@@ -113,10 +126,80 @@ Result TicTacToe::MakeMove(Player player, Location location){
   }
   // Fill space if open
   board[location.x][location.y] = player;
+
+  // Fill Win Container and Check for win
+
+  // Fill x direction
+  if(posibilities[location.x].player == 0){
+    posibilities[location.x].player = player;
+    posibilities[location.x].spaces_taken++;
+  }
+  else if(posibilities[location.x].player == player){
+    posibilities[location.x].spaces_taken++;
+    if(posibilities[location.x].spaces_taken == board_size){
+      std::cout << "Winner" << std::endl;
+    }
+  } else {
+    posibilities[location.x].player = -1; // Player can no longer win here;
+    posibilities[location.x].spaces_taken++;
+  }
+
+  // Fill y direction
+  int y_dir = location.y + board_size;
+  if(posibilities[y_dir].player == 0){
+    posibilities[y_dir].player = player;
+    posibilities[y_dir].spaces_taken++;
+  }
+  else if(posibilities[y_dir].player == player){
+    posibilities[y_dir].spaces_taken++;
+    if(posibilities[y_dir].spaces_taken == board_size){
+      std::cout << "Winner" << std::endl;
+    }
+  } else {
+    posibilities[y_dir].player = -1; // Player can no longer win here;
+    posibilities[y_dir].spaces_taken++;
+  }
+  
+  // Fill TL to BR win
+  if(location.x == location.y){
+    if(posibilities[diagonal_win_position].player == 0){
+      posibilities[diagonal_win_position].player = player;
+      posibilities[diagonal_win_position].spaces_taken++;
+    }
+    else if(posibilities[diagonal_win_position].player == player){
+      posibilities[diagonal_win_position].spaces_taken++;
+      if(posibilities[diagonal_win_position].spaces_taken == board_size){
+        std::cout << "Winner" << std::endl;
+      }
+    } else {
+      posibilities[diagonal_win_position].player = -1; // Player can no longer win here;
+      posibilities[diagonal_win_position].spaces_taken++;
+    }
+  }
+
+  // Fill BL to TR win
+  int diagonal_win_position2 = diagonal_win_position + 1;
+  if(location.x + location.y == board_size - 1){
+    if(posibilities[diagonal_win_position2].player == 0){
+      posibilities[diagonal_win_position2].player = player;
+      posibilities[diagonal_win_position2].spaces_taken++;
+    }
+    else if(posibilities[diagonal_win_position2].player == player){
+      posibilities[diagonal_win_position2].spaces_taken++;
+      if(posibilities[diagonal_win_position2].spaces_taken == board_size){
+        std::cout << "Winner" << std::endl;
+      }
+    } else {
+      posibilities[diagonal_win_position2].player = -1; // Player can no longer win here;
+      posibilities[diagonal_win_position2].spaces_taken++;
+    }
+  }
+
+  // 
   
   // Test for result (Must have made 2x board_size -1 before player can win)
   int result_val = 0;
-  if(move >= ((board_size * 2) - 1)){
+  if(move >= min_moves_to_win){
     result_val = TestWin(location);
   }
   move++;
@@ -136,6 +219,10 @@ void TicTacToe::clearGame(){
       board[i][j] = 0;
     }
   }
+  WinPosibility clear = {0,0};
+  for(int i = 0; i<(2*board_size+2); i++){
+    posibilities[i] = clear;
+  }
   
   move = 1;
 }
@@ -146,6 +233,7 @@ void TicTacToe::allocBoard(){
   for(int i = 0; i < board_size; i++){
     board[i] = new int[board_size];
   }
+  posibilities = new WinPosibility[2*board_size + 2];
 }
 
 // Test for a win/tie
