@@ -26,7 +26,8 @@ struct Result{
 class TicTacToe {
  public:
   TicTacToe();
-  TicTacToe(int board_size);
+  TicTacToe(int size, int num_players);
+  ~TicTacToe();
 
   ///
   /// \brief MakeMove Interface for the game playing system to add a new move to
@@ -36,7 +37,6 @@ class TicTacToe {
   /// \return Result of the move, including the new game status such as Win, Invalid, etc.
   ///
   Result MakeMove(Player player, Location location);
-  
   void clearGame();
 
 private:
@@ -44,18 +44,22 @@ private:
   /// determine win conditions. The implementation should easily extend to different
   /// board sizes and run time should scale linearly (or better) with N.
   
-  int move = 1;
+  int move;
   int board_size;
+  int players;
   int **board;
-  int max_moves = 9;
+  int max_moves;
   void allocBoard();
   int TestWin(Location location);
   void printBoard();
 };
 
-// Generic 3x3 constructor
+// Generic 3x3 constructor for 2 players
 TicTacToe::TicTacToe(){
   board_size = 3;
+  players = 2;
+  move = 1;
+  max_moves = 9;
   // Create the board
   allocBoard();
   // Initialize board to all zeros
@@ -66,8 +70,11 @@ TicTacToe::TicTacToe(){
   }
 }
 
-// Constructor for boards of different sizes
-TicTacToe::TicTacToe(int board_size){
+// Constructor for boards of different sizes and players
+TicTacToe::TicTacToe(int size, int num_players){
+  move = 1;
+  board_size = size;
+  players = num_players;
   max_moves = board_size * board_size;
   allocBoard();
   // Initialize board to all zeros
@@ -78,6 +85,14 @@ TicTacToe::TicTacToe(int board_size){
   }
 }
 
+// Destructor
+TicTacToe::~TicTacToe(){
+  for(int i = 0; i < board_size; i++){
+    delete[] board[i];
+  }
+  delete[] board;
+}
+
 Result TicTacToe::MakeMove(Player player, Location location){
   Result result;
   
@@ -85,7 +100,8 @@ Result TicTacToe::MakeMove(Player player, Location location){
   result.location = location;
   
   // Test for correct player (Assuming 2 players)
-  if((move % 2) != (player % 2)){
+  if((move % players) != (player % players)){
+
     result.status = status_incorrect_player;
     return result;
   }
@@ -204,8 +220,33 @@ int main(int argc, char** argv) {
   Result result;
   Player player = 1;
   Location location;
+
+  int num_players = 2;
+  int size = 3;
+  if(argc > 1){
+    for(int i = 1; i<argc; i++){
+      if(argv[i][0] == '-'){
+        switch (argv[i][1]){
+          case 'P':
+          case 'p':
+            num_players = atoi(&argv[i][3]);
+            break;
+          case 'B':
+          case 'b':
+            size = atoi(&argv[i][3]);
+            break;
+          default:
+            break;
+        }
+      }
+    }
+  }
+  if(num_players >= size){
+    std::cout << "Error - Too many players, board size must be greater than the number of players." << std::endl;
+    return -1;
+  }
   
-  TicTacToe game; // Start a game with board size 3
+  TicTacToe game(size, num_players); // Start a game with board size = size
   
   
  // Add some useful test cases.
